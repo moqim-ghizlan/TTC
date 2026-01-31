@@ -25,7 +25,6 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!key.trim()) return;
-
     if (!validateKey(key)) return;
 
     setLoading(true);
@@ -67,45 +66,77 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <main className="flex flex-col items-center gap-8 p-8 bg-white dark:bg-black rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-black dark:text-zinc-50">
-          Welcome to TTC
-        </h1>
-        <p className="text-zinc-600 dark:text-zinc-400 text-center">
-          Share your code with friends and co-workers
-        </p>
+    <div className="min-h-screen flex flex-col pt-32 items-center bg-background text-foreground relative overflow-hidden font-display transition-colors duration-300">
+        <div className="absolute inset-0 bg-grid-pattern opacity-50 pointer-events-none z-0"></div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-xs">
-          <input
-            type="text"
-            value={key}
-            onChange={(e) => {
-              setKey(e.target.value);
-              if (error) validateKey(e.target.value);
-            }}
-            placeholder="Enter a key (2-20 chars, letters/numbers)"
-            className="p-3 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-900 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={loading}
-          />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading || !key.trim()}
-            className="p-3 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-zinc-400 transition-colors"
-          >
-            {loading ? "Loading..." : "Start Sharing"}
-          </button>
-        </form>
+        <div className="relative z-10 w-full max-w-lg p-4">
+            <div className="bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-2xl rounded-xl p-8 md:p-12 backdrop-blur-sm bg-opacity-95 flex flex-col gap-10">
 
-        <button
-          onClick={generateKey}
-          disabled={loading}
-          className="text-blue-600 dark:text-blue-400 hover:underline disabled:text-zinc-400"
-        >
-          Generate a random key
-        </button>
-      </main>
+                <div className="flex flex-col items-center text-center gap-3">
+                    <div className="h-16 w-16 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center mb-2 shadow-lg shadow-primary/25">
+                        <span className="material-symbols-outlined text-white text-4xl">terminal</span>
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight">
+                        Welcome to TTC
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-normal leading-relaxed max-w-sm">
+                        Instant real-time anonymous code sharing.
+                    </p>
+                </div>
+
+                <div className="w-full flex flex-col gap-6">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+                        <div className="relative flex items-center group">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <span className="material-symbols-outlined text-slate-400 text-[24px]">key</span>
+                            </div>
+                            <input
+                                autoFocus
+                                type="text"
+                                value={key}
+                                onChange={(e) => {
+                                    setKey(e.target.value);
+                                    if (error) validateKey(e.target.value);
+                                }}
+                                placeholder="enter-session-key"
+                                className="block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-black/50 text-foreground pl-12 pr-4 py-5 shadow-inner focus:border-primary focus:ring-primary focus:ring-1 text-lg md:text-xl font-mono placeholder:text-slate-400 transition-all text-center tracking-wider outline-none"
+                                disabled={loading}
+                            />
+                        </div>
+                        {error ? (
+                             <p className="text-center text-xs text-red-500 font-mono">{error}</p>
+                        ) : (
+                            <p className="text-center text-xs text-slate-400 font-mono">2-20 alphanumeric characters</p>
+                        )}
+                    </form>
+
+                    <div className="flex flex-col gap-4">
+                        <button
+                            onClick={generateKey}
+                            disabled={loading}
+                            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-secondary hover:from-primary-hover hover:to-secondary text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/40 transform active:scale-[0.99] cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined">shuffle</span>
+                            <span>Generate Random Key</span>
+                        </button>
+
+                        <button
+                            onClick={handleSubmit}
+                            disabled={loading || !key.trim()}
+                            className="w-full flex items-center justify-center gap-2 bg-transparent border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold py-3 px-6 rounded-lg transition-colors group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">code</span>
+                            <span>Start Sharing</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-center gap-2 opacity-50">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Systems Operational</span>
+            </div>
+        </div>
     </div>
   );
 }
