@@ -7,35 +7,29 @@ export default function SharedPage() {
   const params = useParams();
   const key = params.key as string;
   const [content, setContent] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+  const [lineCount, setLineCount] = useState(1);
+  const [copying, setCopying] = useState(false);
 
+  // Ref for polling management
   const lastTypedAt = useRef<number>(0);
   const contentRef = useRef<string>("");
 
   // Keep ref in sync for interval
   useEffect(() => {
     contentRef.current = content;
+    setLineCount(content.split("\n").length);
   }, [content]);
 
+  // Save Function (Backend)
   const saveContent = useCallback(async (newContent: string) => {
-    setSaving(true);
-    setSaved(false);
     try {
-      const response = await fetch(`/api/code/${key}`, {
+      await fetch(`/api/code/${key}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newContent }),
       });
-      if (response.ok) {
-        setSaved(true);
-        // setTimeout(() => setSaved(false), 2000);
-      }
-    } catch {
-      setError("Failed to save");
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      console.error("Failed to save", err);
     }
   }, [key]);
 
@@ -51,16 +45,16 @@ export default function SharedPage() {
           contentRef.current = serverContent;
         }
       } catch {
-        setError("Failed to load content");
+        console.error("Failed to load initial content");
       }
     };
     fetchContent();
   }, [key]);
 
-  // Polling Logic
+  // 100ms Polling Logic
   useEffect(() => {
     const pollInterval = setInterval(async () => {
-      // Don't pull if user has typed recently (prevent overwriting active work)
+      // Don't pull if user has typed in the last 2 seconds (prevent overwriting active work)
       if (Date.now() - lastTypedAt.current < 2000) return;
 
       try {
@@ -76,101 +70,145 @@ export default function SharedPage() {
       } catch (err) {
         console.error("Polling error", err);
       }
-    }, 1000);
+    }, 100); // 0.1s Polling
 
     return () => clearInterval(pollInterval);
   }, [key]);
 
-  // Auto-save debounce
+  // Auto-save debounce (0.5s for faster save feeling)
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Only save if we strictly have content and it WAS typed recently (avoid saving stale state on load)
+      // Only save if we strictly have content and it WAS typed recently
       if (Date.now() - lastTypedAt.current < 1500 && Date.now() - lastTypedAt.current > 100) {
          saveContent(content);
       }
-    }, 1000);
+    }, 500);
     return () => clearTimeout(timer);
   }, [content, saveContent]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     lastTypedAt.current = Date.now();
     setContent(e.target.value);
-    setSaved(false);
+  };
+
+  const copyToClipboard = () => {
+      navigator.clipboard.writeText(window.location.href);
+      setCopying(true);
+      setTimeout(() => setCopying(false), 2000);
   };
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground font-display overflow-hidden relative transition-colors duration-300">
-      <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none z-0"></div>
+    <div className="flex h-screen flex-col bg-[#101922] text-[#abb2bf] font-mono overflow-hidden">
+        {/* Header */}
+        <header className="flex shrink-0 items-center justify-between border-b border-[#283039] bg-[#1c2127] px-4 py-2 z-10 h-14">
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-white">
+                    <div className="flex items-center justify-center h-8 w-8 rounded bg-primary text-white shadow-lg shadow-primary/20">
+                        <span className="material-symbols-outlined text-xl">code</span>
+                    </div>
+                    <span className="font-bold text-lg hidden sm:block tracking-tight">TTC</span>
+                </div>
 
-      <header className="relative z-10 flex items-center justify-between px-6 py-4 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3">
-             <div className="h-10 w-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-                <span className="material-symbols-outlined text-white text-xl">terminal</span>
+                {/* URL Bar */}
+                <div className="hidden md:flex items-center bg-[#101922] rounded-md border border-[#283039] h-9 overflow-hidden group focus-within:border-[#3b4754] transition-colors max-w-md">
+                    <div className="flex items-center px-3 border-r border-[#283039] bg-[#151b23] h-full text-[#4d5b6b]">
+                        <span className="material-symbols-outlined text-sm">lock</span>
+                    </div>
+                    <div className="px-3 text-sm text-[#4d5b6b] truncate">
+                        <span className="text-white select-all">{key}</span>
+                    </div>
+                    <button
+                        onClick={copyToClipboard}
+                        className="flex items-center justify-center px-3 h-full hover:bg-[#283039] border-l border-[#283039] text-[#4d5b6b] hover:text-white transition-colors cursor-pointer"
+                        title="Copy URL"
+                    >
+                         <span className="material-symbols-outlined text-sm">
+                             {copying ? "check" : "content_copy"}
+                         </span>
+                    </button>
+                </div>
             </div>
-            <div>
-                 <h1 className="text-xl font-bold tracking-tight">
-                    TTC
-                </h1>
-                <p className="text-xs text-slate-500 font-mono">
-                    Session: <span className="text-primary font-bold">{key}</span>
-                </p>
+
+            <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#151b23]/50 border border-[#283039]">
+                    <div className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#6c7d8f]">Live Sync 0.1s</span>
+                 </div>
+
+                 <button className="flex items-center justify-center h-9 w-9 rounded-md bg-[#283039] text-[#9dabb9] hover:text-white hover:bg-[#3b4754] border border-[#3b4754] transition-colors">
+                    <span className="material-symbols-outlined text-sm">settings</span>
+                 </button>
             </div>
-        </div>
+        </header>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-slate-800">
-              {saving ? (
-                <>
-                    <span className="material-symbols-outlined text-primary text-sm animate-spin">sync</span>
-                    <span className="text-xs font-mono text-slate-500">Syncing...</span>
-                </>
-              ) : saved ? (
-                <>
-                    <span className="material-symbols-outlined text-green-500 text-sm">check_circle</span>
-                    <span className="text-xs font-mono text-slate-500">Saved</span>
-                </>
-              ) : error ? (
-                 <span className="text-xs font-mono text-red-500">{error}</span>
-              ) : (
-                <>
-                    <span className="material-symbols-outlined text-slate-400 text-sm">cloud_queue</span>
-                    <span className="text-xs font-mono text-slate-500">Ready</span>
-                </>
-              )}
-          </div>
-        </div>
-      </header>
-
-      <main className="relative z-10 flex-1 p-4 md:p-6 flex flex-col">
-        <div className="flex-1 w-full max-w-5xl mx-auto bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden flex flex-col">
-            <div className="h-8 bg-slate-50 dark:bg-[#0d1218] border-b border-slate-200 dark:border-slate-800 flex items-center px-4 gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                <div className="w-3 h-3 rounded-full bg-green-400"></div>
+        {/* Main Editor Area */}
+        <main className="flex-1 flex overflow-hidden relative">
+            {/* Sidebar Line Numbers */}
+            <div className="w-12 md:w-16 flex-shrink-0 bg-[#151b23] border-r border-[#283039] flex flex-col items-end py-4 pr-3 md:pr-4 text-[#4d5b6b] text-sm leading-7 select-none overflow-hidden">
+                {Array.from({ length: Math.max(lineCount, 25) }).map((_, i) => (
+                    <div key={i} className="font-mono">{i + 1}</div>
+                ))}
             </div>
-            <textarea
-            autoFocus
-            value={content}
-            onChange={handleChange}
-            className="flex-1 w-full p-6 font-mono text-sm md:text-base bg-surface-light dark:bg-surface-dark text-foreground focus:outline-none resize-none leading-relaxed"
-            placeholder="// Start typing your code here..."
-            spellCheck={false}
-            />
-        </div>
-      </main>
 
-      <div className="fixed bottom-4 right-4 z-20">
-          <button
-            onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                // nice to have toast here
-            }}
-            className="group flex items-center gap-2 bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
-            title="Copy URL"
-          >
-             <span className="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">link</span>
-          </button>
-      </div>
+            {/* Editing Area */}
+            <div className="flex-1 relative bg-[#101922]">
+                 <textarea
+                    autoFocus
+                    value={content}
+                    onChange={handleChange}
+                    className="w-full h-full p-4 bg-transparent border-none text-gray-300 resize-none focus:ring-0 focus:outline-none font-mono text-sm leading-7 custom-scrollbar"
+                    spellCheck="false"
+                    placeholder="// Start typing..."
+                    style={{ lineHeight: '1.75rem' }} // Matches leading-7
+                />
+            </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="h-8 bg-[#151b23] border-t border-[#283039] flex items-center justify-between px-4 text-xs text-[#9dabb9] select-none">
+             <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                     <span className="material-symbols-outlined text-sm">code_blocks</span>
+                     <span>JavaScript</span>
+                 </div>
+                 <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                     <span className="material-symbols-outlined text-sm">check_circle</span>
+                     <span>Prettier</span>
+                 </div>
+             </div>
+
+             <div className="flex items-center gap-4">
+                 <span>Ln {content.split('\n').length}, Col {content.length}</span>
+                 <div className="flex items-center gap-1">
+                     <span className="material-symbols-outlined text-sm">group</span>
+                     <span>1 User</span>
+                 </div>
+                 <div className="flex items-center gap-1 text-white">
+                     <span>UTF-8</span>
+                 </div>
+             </div>
+        </footer>
+
+        <style jsx global>{`
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 10px;
+                height: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #101922;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #283039;
+                border-radius: 5px;
+                border: 2px solid #101922;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #3b4754;
+            }
+        `}</style>
     </div>
   );
 }
