@@ -16,6 +16,9 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "TTC - Take The Code",
   description: "Share your code with friends and co-workers",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

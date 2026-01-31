@@ -73,8 +73,8 @@ export default function Home() {
             <div className="bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-2xl rounded-xl p-8 md:p-12 backdrop-blur-sm bg-opacity-95 flex flex-col gap-10">
 
                 <div className="flex flex-col items-center text-center gap-3">
-                    <div className="h-16 w-16 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center mb-2 shadow-lg shadow-primary/25">
-                        <span className="material-symbols-outlined text-white text-4xl">terminal</span>
+                    <div className="h-16 w-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center mb-2 shadow-lg shadow-primary/25 overflow-hidden border border-white/10">
+                         <img src="/icon.png" alt="TTC Logo" className="w-12 h-12 object-contain" />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black tracking-tight">
                         Welcome to TTC
