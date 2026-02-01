@@ -21,6 +21,7 @@ export default function SharedPage() {
   const [content, setContent] = useState("");
   const [lineCount, setLineCount] = useState(1);
   const [copying, setCopying] = useState(false);
+  const [copyingCode, setCopyingCode] = useState(false);
   const [language, setLanguage] = useState("Plain Text");
   const [lastUpdate, setLastUpdate] = useState<string>("Never");
 
@@ -136,6 +137,12 @@ export default function SharedPage() {
       navigator.clipboard.writeText(window.location.href);
       setCopying(true);
       setTimeout(() => setCopying(false), 2000);
+  };
+
+  const copyCodeToClipboard = () => {
+      navigator.clipboard.writeText(content);
+      setCopyingCode(true);
+      setTimeout(() => setCopyingCode(false), 2000);
   };
 
   // Get CodeMirror language extension based on detected language
@@ -283,6 +290,18 @@ export default function SharedPage() {
                          </span>
                     </button>
                 </div>
+
+                {/* Copy Code Button */}
+                <button
+                    onClick={copyCodeToClipboard}
+                    className="hidden md:flex items-center gap-2 px-4 h-9 rounded-md bg-[#101922] border border-[#283039] hover:bg-[#283039] hover:border-[#3b4754] text-[#4d5b6b] hover:text-white transition-colors cursor-pointer"
+                    title="Copy Code"
+                >
+                    <span className="material-symbols-outlined text-sm">
+                        {copyingCode ? "check" : "code"}
+                    </span>
+                    <span className="text-xs font-medium">Copy Code</span>
+                </button>
             </div>
 
         </header>
