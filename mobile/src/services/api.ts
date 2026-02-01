@@ -41,7 +41,11 @@ export const api = {
         try {
             const response = await axios.get(`${API_BASE_URL}/api/code/${key}`);
             return response.data;
-        } catch (error) {
+        } catch (error: any) {
+            if (error.response && error.response.status === 404) {
+                // New snippet, not an error
+                return null;
+            }
             console.error('Get code error:', error);
             return null;
         }
