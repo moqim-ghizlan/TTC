@@ -47,8 +47,8 @@ export default function EditorScreen({ route, navigation }: Props) {
     if (/^<\?php|<\?=|\$\w+\s*=|function\s+\w+\s*\(.*\)\s*{|echo\s+/.test(code)) return 'PHP';
     if (/\bdef\s+\w+|puts\s+|require\s+['"]|end\b|attr_accessor/.test(code)) return 'Ruby';
     if (/<!DOCTYPE\s+html>|<html|<body|<div|<span|<h1/.test(code)) return 'HTML';
-    if (/{[\s\S]*?}|@media|@import|color:|background:|font-/.test(code) && !code.includes('const') && !code.includes('var')) return 'CSS';
     if (/^[\s\n]*[{\[]/.test(code) && /[:"\[\],]/.test(code)) return 'JSON';
+    if (/{[\s\S]*?}|@media|@import|color:|background:|font-/.test(code) && !code.includes('const') && !code.includes('var')) return 'CSS';
     if (/^#\s+|##\s+|\[.*\]\(.*\)|- \w+|\*\*.*\*\*/m.test(code)) return 'Markdown';
 
     return 'Plain Text';
