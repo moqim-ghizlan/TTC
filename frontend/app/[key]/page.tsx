@@ -2,6 +2,18 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { python } from '@codemirror/lang-python';
+import { java } from '@codemirror/lang-java';
+import { cpp } from '@codemirror/lang-cpp';
+import { rust } from '@codemirror/lang-rust';
+import { php } from '@codemirror/lang-php';
+import { css } from '@codemirror/lang-css';
+import { html } from '@codemirror/lang-html';
+import { markdown } from '@codemirror/lang-markdown';
+import { json } from '@codemirror/lang-json';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 export default function SharedPage() {
   const params = useParams();
@@ -15,6 +27,8 @@ export default function SharedPage() {
   // Ref for polling management
   const lastTypedAt = useRef<number>(0);
   const contentRef = useRef<string>("");
+  // const prismRef = useRef<any>(null); // Removed Prism-related ref
+  // const [prismLoaded, setPrismLoaded] = useState(false); // Removed Prism-related state
 
   // Keep ref in sync for interval
   useEffect(() => {
@@ -122,6 +136,35 @@ export default function SharedPage() {
       navigator.clipboard.writeText(window.location.href);
       setCopying(true);
       setTimeout(() => setCopying(false), 2000);
+  };
+
+  // Get CodeMirror language extension based on detected language
+  const getCodeMirrorExtension = (lang: string) => {
+    switch (lang) {
+      case "JavaScript":
+      case "TypeScript":
+        return javascript({ typescript: lang === "TypeScript" });
+      case "Python":
+        return python();
+      case "Java":
+        return java();
+      case "C++":
+        return cpp();
+      case "Rust":
+        return rust();
+      case "PHP":
+        return php();
+      case "HTML":
+        return html();
+      case "CSS":
+        return css();
+      case "JSON":
+        return json();
+      case "Markdown":
+        return markdown();
+      default:
+        return [];
+    }
   };
 
   // Auto-detect language based on content
@@ -254,56 +297,30 @@ export default function SharedPage() {
             </div>
 
             {/* Editing Area */}
-            <div className="flex-1 relative bg-[#101922]">
-                <textarea
-                    autoFocus
+            <div className="flex-1 relative bg-[#101922] overflow-hidden">
+                <CodeMirror
                     value={content}
-                    onChange={handleChange}
-                    onKeyDown={(e) => {
-                        if (e.key === "Tab") {
-                            e.preventDefault();
-                            const target = e.target as HTMLTextAreaElement;
-                            const start = target.selectionStart;
-                            const end = target.selectionEnd;
-                            const newValue = content.substring(0, start) + "    " + content.substring(end);
+                    height="100%"
+                    theme={oneDark}
+                    extensions={[getCodeMirrorExtension(language)]}
+                    onChange={(value) => {
+                        lastTypedAt.current = Date.now();
+                        setContent(value);
 
-                            setContent(newValue);
-                            lastTypedAt.current = Date.now();
-
-                            // Move cursor after the inserted spaces (setTimeout needed for React state update)
-                            requestAnimationFrame(() => {
-                                target.selectionStart = target.selectionEnd = start + 4;
-                            });
-                        }
-
-                        const pairs: Record<string, string> = {
-                            "(": ")",
-                            "{": "}",
-                            "[": "]",
-                            '"': '"',
-                            "`": "`",
-                        };
-
-                        if (pairs[e.key]) {
-                            e.preventDefault();
-                            const target = e.target as HTMLTextAreaElement;
-                            const start = target.selectionStart;
-                            const end = target.selectionEnd;
-                            const closing = pairs[e.key];
-                            const newValue = content.substring(0, start) + e.key + closing + content.substring(end);
-
-                            setContent(newValue);
-                            lastTypedAt.current = Date.now();
-
-                            requestAnimationFrame(() => {
-                                target.selectionStart = target.selectionEnd = start + 1;
-                            });
-                        }
+                        // Update last modified time
+                        const now = new Date();
+                        const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                        setLastUpdate(timeStr);
                     }}
-                    className="w-full h-full p-4 bg-transparent border-none text-gray-300 resize-none focus:ring-0 focus:outline-none font-mono text-sm leading-7 custom-scrollbar"
-                    spellCheck="false"
-                    placeholder="// Start typing..."
-                    style={{ lineHeight: '1.75rem' }}
+                    basicSetup={{
+                        lineNumbers: false, // We have custom line numbers
+                        foldGutter: false,
+                        highlightActiveLineGutter: false,
+                    }}
+                    style={{
+                        fontSize: '14px',
+                        height: '100%',
+                    }}
                 />
             </div>
         </main>
