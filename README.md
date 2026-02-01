@@ -27,9 +27,15 @@ A real-time, anonymous code sharing platform built with Next.js, React, and Post
 
 ### Backend
 - **Next.js API Routes** - Serverless API endpoints
+- **Zod** - Schema validation
 - **Prisma** - Type-safe database ORM
 - **SQLite** - Lightweight embedded database
-- **Zod** - Schema validation
+
+### Mobile
+- **React Native** - Cross-platform mobile framework
+- **Expo** - Development ecosystem
+- **TypeScript** - Type-safe development
+- **Axios** - API Client
 
 ---
 
@@ -89,6 +95,33 @@ npm start
 ```
 
 ---
+## Mobile Application (React Native)
+
+To run the mobile application on your phone/emulator:
+
+### 1. Prerequisites
+- **Node.js**
+- **Expo CLI** (installed automatically with npm dependencies)
+- **Expo Go App** (on your iOS/Android phone)
+
+### 2. Setup Mobile App
+Navigate to the mobile directory and install dependencies:
+```bash
+cd ../mobile
+npm install
+```
+
+### 3. Run Mobile App
+Start the Expo development server:
+```bash
+npm start
+```
+Then scan the QR code with the **Expo Go** app on your phone, or press `a` for Android Emulator / `i` for iOS Simulator.
+
+> Note: Ensure your mobile device is on the same Wi-Fi network as your computer. Update `mobile/src/services/api.ts` if IP connection issues persist.
+
+---
+
 
 ## Usage
 
