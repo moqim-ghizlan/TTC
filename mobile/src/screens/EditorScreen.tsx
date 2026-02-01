@@ -10,8 +10,8 @@ import {
   Alert,
   StatusBar,
   Share,
-  Clipboard,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { api } from '../services/api';
 
