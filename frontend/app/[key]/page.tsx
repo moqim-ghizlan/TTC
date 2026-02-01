@@ -145,6 +145,38 @@ export default function SharedPage() {
       setTimeout(() => setCopyingCode(false), 2000);
   };
 
+  const downloadCode = () => {
+      // Map language to file extension
+      const extensionMap: Record<string, string> = {
+          "JavaScript": "js",
+          "TypeScript": "ts",
+          "Python": "py",
+          "Java": "java",
+          "C++": "cpp",
+          "Go": "go",
+          "Rust": "rs",
+          "PHP": "php",
+          "Ruby": "rb",
+          "HTML": "html",
+          "CSS": "css",
+          "JSON": "json",
+          "Markdown": "md",
+          "Plain Text": "txt",
+      };
+
+      const extension = extensionMap[language] || "txt";
+      const filename = `code_${key}.${extension}`;
+
+      // Create blob and download
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+  };
+
   // Get CodeMirror language extension based on detected language
   const getCodeMirrorExtension = (lang: string) => {
     switch (lang) {
@@ -301,6 +333,18 @@ export default function SharedPage() {
                         {copyingCode ? "check" : "code"}
                     </span>
                     <span className="text-xs font-medium">Copy Code</span>
+                </button>
+
+                {/* Download Button */}
+                <button
+                    onClick={downloadCode}
+                    className="hidden md:flex items-center gap-2 px-4 h-9 rounded-md bg-[#101922] border border-[#283039] hover:bg-[#283039] hover:border-[#3b4754] text-[#4d5b6b] hover:text-white transition-colors cursor-pointer"
+                    title={`Download as .${language === "Plain Text" ? "txt" : language.toLowerCase()}`}
+                >
+                    <span className="material-symbols-outlined text-sm">
+                        download
+                    </span>
+                    <span className="text-xs font-medium">Download</span>
                 </button>
             </div>
 
