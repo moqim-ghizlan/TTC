@@ -103,10 +103,9 @@ export default function SharedPage() {
         <header className="flex shrink-0 items-center justify-between border-b border-[#283039] bg-[#1c2127] px-4 py-2 z-10 h-14">
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3 text-white">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary text-white shadow-lg shadow-primary/20 overflow-hidden border border-white/10">
-                        <img src="/icon.png" alt="TTC Logo" className="w-6 h-6 object-contain" />
+                    <div className="flex items-center justify-center h-8 w-8 rounded-lg overflow-hidden">
+                        <img src="/logo.png?v=3" alt="TTC Logo" className="w-6 h-6 object-contain" />
                     </div>
-                    <span className="font-bold text-lg hidden sm:block tracking-tight">TTC</span>
                 </div>
 
                 {/* URL Bar */}
@@ -137,10 +136,6 @@ export default function SharedPage() {
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#6c7d8f]">Live Sync 0.1s</span>
                  </div>
-
-                 <button className="flex items-center justify-center h-9 w-9 rounded-md bg-[#283039] text-[#9dabb9] hover:text-white hover:bg-[#3b4754] border border-[#3b4754] transition-colors">
-                    <span className="material-symbols-outlined text-sm">settings</span>
-                 </button>
             </div>
         </header>
 

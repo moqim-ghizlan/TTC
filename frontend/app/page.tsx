@@ -73,8 +73,8 @@ export default function Home() {
             <div className="bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-2xl rounded-xl p-8 md:p-12 backdrop-blur-sm bg-opacity-95 flex flex-col gap-10">
 
                 <div className="flex flex-col items-center text-center gap-3">
-                    <div className="h-16 w-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center mb-2 shadow-lg shadow-primary/25 overflow-hidden border border-white/10">
-                         <img src="/icon.png" alt="TTC Logo" className="w-12 h-12 object-contain" />
+                    <div className="h-16 w-16 rounded-xl flex items-center justify-center mb-2 shadow-lg shadow-primary/25 overflow-hidden border border-white/10">
+                         <img src="/logo.png?v=3" alt="TTC Logo" className="w-12 h-12 object-contain" />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black tracking-tight">
                         Welcome to TTC
@@ -112,6 +112,15 @@ export default function Home() {
 
                     <div className="flex flex-col gap-4">
                         <button
+                            onClick={handleSubmit}
+                            disabled={loading || !key.trim()}
+                            className="w-full flex items-center justify-center gap-2 bg-transparent border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold py-3 px-6 rounded-lg transition-colors group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">code</span>
+                            <span>Start Sharing</span>
+                        </button>
+
+                        <button
                             onClick={generateKey}
                             disabled={loading}
                             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-secondary hover:from-primary-hover hover:to-secondary text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/40 transform active:scale-[0.99] cursor-pointer"
@@ -120,14 +129,7 @@ export default function Home() {
                             <span>Generate Random Key</span>
                         </button>
 
-                        <button
-                            onClick={handleSubmit}
-                            disabled={loading || !key.trim()}
-                            className="w-full flex items-center justify-center gap-2 bg-transparent border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold py-3 px-6 rounded-lg transition-colors group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">code</span>
-                            <span>Start Sharing</span>
-                        </button>
+
                     </div>
                 </div>
             </div>

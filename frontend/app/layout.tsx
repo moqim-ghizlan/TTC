@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "TTC - Take The Code",
   description: "Share your code with friends and co-workers",
   icons: {
-    icon: "/icon.png",
+    icon: "/logo.png?v=3",
   },
 };
 
