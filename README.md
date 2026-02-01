@@ -28,7 +28,7 @@ A real-time, anonymous code sharing platform built with Next.js, React, and Post
 ### Backend
 - **Next.js API Routes** - Serverless API endpoints
 - **Prisma** - Type-safe database ORM
-- **PostgreSQL** - Relational database
+- **SQLite** - Lightweight embedded database
 - **Zod** - Schema validation
 
 ---
@@ -52,10 +52,12 @@ npm install
 
 ### Step 3: Configure Database
 
-Create a `.env` file in the frontend directory with your database connection:
+Create a `.env` file in the frontend directory:
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/ttc"
+DATABASE_URL="file:./dev.db"
 ```
+
+Note: SQLite will automatically create the database file when you run migrations.
 
 ### Step 4: Initialize Database
 
