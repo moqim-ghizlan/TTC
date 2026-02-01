@@ -9,6 +9,8 @@ export default function SharedPage() {
   const [content, setContent] = useState("");
   const [lineCount, setLineCount] = useState(1);
   const [copying, setCopying] = useState(false);
+  const [language, setLanguage] = useState("Plain Text");
+  const [lastUpdate, setLastUpdate] = useState<string>("Never");
 
   // Ref for polling management
   const lastTypedAt = useRef<number>(0);
@@ -35,6 +37,12 @@ export default function SharedPage() {
 
   // Initial Fetch
   useEffect(() => {
+    // Load saved language from localStorage
+    const savedLanguage = localStorage.getItem('ttc-language');
+    if (savedLanguage) {
+      setLanguage(savedLanguage);
+    }
+
     const fetchContent = async () => {
       try {
         const response = await fetch(`/api/code/${key}`);
@@ -43,6 +51,13 @@ export default function SharedPage() {
           const serverContent = data.content || "";
           setContent(serverContent);
           contentRef.current = serverContent;
+
+          // Set last update from server
+          if (data.updatedAt) {
+            const date = new Date(data.updatedAt);
+            const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            setLastUpdate(timeStr);
+          }
         }
       } catch {
         console.error("Failed to load initial content");
@@ -65,6 +80,13 @@ export default function SharedPage() {
 
           if (serverContent !== contentRef.current) {
             setContent(serverContent);
+          }
+
+          // Update last modified time from server
+          if (data.updatedAt) {
+            const date = new Date(data.updatedAt);
+            const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            setLastUpdate(timeStr);
           }
         }
       } catch (err) {
@@ -89,6 +111,11 @@ export default function SharedPage() {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     lastTypedAt.current = Date.now();
     setContent(e.target.value);
+
+    // Update last modified time
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    setLastUpdate(timeStr);
   };
 
   const copyToClipboard = () => {
@@ -96,6 +123,96 @@ export default function SharedPage() {
       setCopying(true);
       setTimeout(() => setCopying(false), 2000);
   };
+
+  // Auto-detect language based on content
+  const detectLanguage = (code: string): string => {
+    if (!code || code.length < 10) return 'Plain Text'; // Default to Plain Text if too short
+
+    const lowerCode = code.toLowerCase();
+    const firstLine = code.split('\n')[0].toLowerCase();
+
+    // Python patterns
+    if (/\bdef\s+\w+\s*\(|import\s+\w+|from\s+\w+\s+import|class\s+\w+:|print\s*\(|__name__/.test(code)) {
+      return 'Python';
+    }
+
+    // TypeScript patterns (check before JavaScript)
+    if (/:\s*(string|number|boolean|any|void|interface|type\s+\w+\s*=)|<\w+>|\bas\s+\w+/.test(code)) {
+      return 'TypeScript';
+    }
+
+    // JavaScript patterns
+    if (/\b(const|let|var|function|=>|console\.log|require\(|export\s+(default|const)|async\s+function)\b/.test(code)) {
+      return 'JavaScript';
+    }
+
+    // Java patterns
+    if (/\bpublic\s+(class|static|void)|System\.out\.println|private\s+\w+\s+\w+|extends\s+\w+|implements\s+\w+/.test(code)) {
+      return 'Java';
+    }
+
+    // C++ patterns
+    if (/#include\s*<|std::|cout\s*<<|cin\s*>>|namespace\s+\w+|int\s+main\s*\(/.test(code)) {
+      return 'C++';
+    }
+
+    // Go patterns
+    if (/^package\s+\w+|func\s+\w+\s*\(|import\s+\(|fmt\.Print/.test(code)) {
+      return 'Go';
+    }
+
+    // Rust patterns
+    if (/\bfn\s+\w+|let\s+mut\s+|println!|impl\s+\w+|use\s+std::/.test(code)) {
+      return 'Rust';
+    }
+
+    // PHP patterns
+    if (/^<\?php|<\?=|\$\w+\s*=|function\s+\w+\s*\(.*\)\s*{|echo\s+/.test(code)) {
+      return 'PHP';
+    }
+
+    // Ruby patterns
+    if (/\bdef\s+\w+|puts\s+|require\s+['"]|end\b|attr_accessor/.test(code)) {
+      return 'Ruby';
+    }
+
+    // HTML patterns
+    if (firstLine.includes('<!doctype') || /^<html|<head>|<body>|<div|<script>/.test(lowerCode.trim())) {
+      return 'HTML';
+    }
+
+    // CSS patterns
+    if (/\{[\s\S]*:[^:]+;[\s\S]*\}|@media|@import|\.[\w-]+\s*\{/.test(code)) {
+      return 'CSS';
+    }
+
+    // JSON patterns
+    if (/^\s*\{[\s\S]*"[\w-]+"[\s\S]*:/.test(code) || /^\s*\[[\s\S]*\{/.test(code)) {
+      return 'JSON';
+    }
+
+    // Markdown patterns
+    if (/^#{1,6}\s+|^\*\*|^-\s+|\[.*\]\(.*\)|^```/.test(code)) {
+      return 'Markdown';
+    }
+
+    return 'Plain Text'; // Default to Plain Text if no match
+  };
+
+  // Auto-detect language when content changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (content.length > 20) {
+        const detected = detectLanguage(content);
+        if (detected !== language) {
+          setLanguage(detected);
+          localStorage.setItem('ttc-language', detected);
+        }
+      }
+    }, 1000); // Wait 1s after typing stops
+
+    return () => clearTimeout(timer);
+  }, [content]);
 
   return (
     <div className="flex h-screen flex-col bg-[#101922] text-[#abb2bf] font-mono overflow-hidden">
@@ -110,9 +227,6 @@ export default function SharedPage() {
 
                 {/* URL Bar */}
                 <div className="hidden md:flex items-center bg-[#101922] rounded-md border border-[#283039] h-9 overflow-hidden group focus-within:border-[#3b4754] transition-colors max-w-md">
-                    <div className="flex items-center px-3 border-r border-[#283039] bg-[#151b23] h-full text-[#4d5b6b]">
-                        <span className="material-symbols-outlined text-sm">lock</span>
-                    </div>
                     <div className="px-3 text-sm text-[#4d5b6b] truncate">
                         <span className="text-white select-all">{key}</span>
                     </div>
@@ -128,15 +242,6 @@ export default function SharedPage() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-3">
-                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#151b23]/50 border border-[#283039]">
-                    <div className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#6c7d8f]">Live Sync 0.1s</span>
-                 </div>
-            </div>
         </header>
 
         {/* Main Editor Area */}
@@ -176,7 +281,6 @@ export default function SharedPage() {
                             "{": "}",
                             "[": "]",
                             '"': '"',
-                            "'": "'",
                             "`": "`",
                         };
 
@@ -207,22 +311,18 @@ export default function SharedPage() {
         {/* Footer */}
         <footer className="h-8 bg-[#151b23] border-t border-[#283039] flex items-center justify-between px-4 text-xs text-[#9dabb9] select-none">
              <div className="flex items-center gap-4">
-                 <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                 <div className="flex items-center gap-1">
                      <span className="material-symbols-outlined text-sm">code_blocks</span>
-                     <span>JavaScript</span>
-                 </div>
-                 <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                     <span>Prettier</span>
+                     <span>{language}</span>
                  </div>
              </div>
 
              <div className="flex items-center gap-4">
-                 <span>Ln {content.split('\n').length}, Col {content.length}</span>
                  <div className="flex items-center gap-1">
-                     <span className="material-symbols-outlined text-sm">group</span>
-                     <span>1 User</span>
+                     <span className="material-symbols-outlined text-sm">schedule</span>
+                     <span>{lastUpdate}</span>
                  </div>
+                 <span>Ln {content.split('\n').length}, Col {content.length}</span>
                  <div className="flex items-center gap-1 text-white">
                      <span>UTF-8</span>
                  </div>
