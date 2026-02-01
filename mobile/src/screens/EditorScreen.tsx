@@ -10,6 +10,7 @@ import {
   Alert,
   StatusBar,
   Share,
+  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -28,8 +29,30 @@ export default function EditorScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [lastUpdate, setLastUpdate] = useState('Never');
+  const [language, setLanguage] = useState('Plain Text');
   const lastTypedAt = useRef<number>(0);
   const contentRef = useRef<string>('');
+
+  // Auto-detect language based on content
+  const detectLanguage = (code: string): string => {
+    if (!code || code.length < 10) return 'Plain Text';
+
+    if (/\bdef\s+\w+\s*\(|import\s+\w+|from\s+\w+\s+import|class\s+\w+:|print\s*\(|__name__/.test(code)) return 'Python';
+    if (/:\s*(string|number|boolean|any|void|interface|type\s+\w+\s*=)|<\w+>|\bas\s+\w+/.test(code)) return 'TypeScript';
+    if (/\b(const|let|var|function|=>|console\.log|require\(|export\s+(default|const)|async\s+function)\b/.test(code)) return 'JavaScript';
+    if (/\bpublic\s+(class|static|void)|System\.out\.println|private\s+\w+\s+\w+|extends\s+\w+|implements\s+\w+/.test(code)) return 'Java';
+    if (/#include\s*<|std::|cout\s*<<|cin\s*>>|namespace\s+\w+|int\s+main\s*\(/.test(code)) return 'C++';
+    if (/^package\s+\w+|func\s+\w+\s*\(|import\s+\(|fmt\.Print/.test(code)) return 'Go';
+    if (/\bfn\s+\w+|let\s+mut\s+|println!|impl\s+\w+|use\s+std::/.test(code)) return 'Rust';
+    if (/^<\?php|<\?=|\$\w+\s*=|function\s+\w+\s*\(.*\)\s*{|echo\s+/.test(code)) return 'PHP';
+    if (/\bdef\s+\w+|puts\s+|require\s+['"]|end\b|attr_accessor/.test(code)) return 'Ruby';
+    if (/<!DOCTYPE\s+html>|<html|<body|<div|<span|<h1/.test(code)) return 'HTML';
+    if (/{[\s\S]*?}|@media|@import|color:|background:|font-/.test(code) && !code.includes('const') && !code.includes('var')) return 'CSS';
+    if (/^[\s\n]*[{\[]/.test(code) && /[:"\[\],]/.test(code)) return 'JSON';
+    if (/^#\s+|##\s+|\[.*\]\(.*\)|- \w+|\*\*.*\*\*/m.test(code)) return 'Markdown';
+
+    return 'Plain Text';
+  };
 
   // Keep ref in sync
   useEffect(() => {
@@ -43,6 +66,7 @@ export default function EditorScreen({ route, navigation }: Props) {
         const data = await api.getCode(key);
         if (data) {
           setContent(data.content || '');
+          setLanguage(detectLanguage(data.content || ''));
           const date = new Date(data.updatedAt);
           const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
           setLastUpdate(timeStr);
@@ -82,6 +106,7 @@ export default function EditorScreen({ route, navigation }: Props) {
       const data = await api.getCode(key);
       if (data && data.content !== contentRef.current) {
         setContent(data.content || '');
+        setLanguage(detectLanguage(data.content || ''));
       }
     }, 5000); // Poll every 5 seconds
 
@@ -125,8 +150,13 @@ export default function EditorScreen({ route, navigation }: Props) {
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
-        <View style={styles.keyContainer}>
-          <Text style={styles.keyText}>{key}</Text>
+        <View style={styles.titleContainer}>
+          <View style={styles.keyContainer}>
+            <Text style={styles.keyText}>{key}</Text>
+          </View>
+          <View style={styles.languageBadge}>
+             <Text style={styles.languageText}>{language}</Text>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -148,6 +178,8 @@ export default function EditorScreen({ route, navigation }: Props) {
           onChangeText={(text) => {
             lastTypedAt.current = Date.now();
             setContent(text);
+            const newLang = detectLanguage(text);
+            if (newLang !== language) setLanguage(newLang);
           }}
           placeholder="// Start typing..."
           placeholderTextColor="#64748b"
@@ -268,5 +300,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  titleContainer: {
+    alignItems: 'center',
+  },
+  languageBadge: {
+    marginTop: 4,
+    backgroundColor: '#334155',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  languageText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
 });
