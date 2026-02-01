@@ -105,7 +105,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               placeholder="enter-session-key"
               placeholderTextColor="#64748b"
               autoCapitalize="none"
-              autoCorrect={false}
               editable={!loading}
             />
           </View>
