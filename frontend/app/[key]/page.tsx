@@ -150,14 +150,56 @@ export default function SharedPage() {
 
             {/* Editing Area */}
             <div className="flex-1 relative bg-[#101922]">
-                 <textarea
+                <textarea
                     autoFocus
                     value={content}
                     onChange={handleChange}
+                    onKeyDown={(e) => {
+                        if (e.key === "Tab") {
+                            e.preventDefault();
+                            const target = e.target as HTMLTextAreaElement;
+                            const start = target.selectionStart;
+                            const end = target.selectionEnd;
+                            const newValue = content.substring(0, start) + "    " + content.substring(end);
+
+                            setContent(newValue);
+                            lastTypedAt.current = Date.now();
+
+                            // Move cursor after the inserted spaces (setTimeout needed for React state update)
+                            requestAnimationFrame(() => {
+                                target.selectionStart = target.selectionEnd = start + 4;
+                            });
+                        }
+
+                        const pairs: Record<string, string> = {
+                            "(": ")",
+                            "{": "}",
+                            "[": "]",
+                            '"': '"',
+                            "'": "'",
+                            "`": "`",
+                        };
+
+                        if (pairs[e.key]) {
+                            e.preventDefault();
+                            const target = e.target as HTMLTextAreaElement;
+                            const start = target.selectionStart;
+                            const end = target.selectionEnd;
+                            const closing = pairs[e.key];
+                            const newValue = content.substring(0, start) + e.key + closing + content.substring(end);
+
+                            setContent(newValue);
+                            lastTypedAt.current = Date.now();
+
+                            requestAnimationFrame(() => {
+                                target.selectionStart = target.selectionEnd = start + 1;
+                            });
+                        }
+                    }}
                     className="w-full h-full p-4 bg-transparent border-none text-gray-300 resize-none focus:ring-0 focus:outline-none font-mono text-sm leading-7 custom-scrollbar"
                     spellCheck="false"
                     placeholder="// Start typing..."
-                    style={{ lineHeight: '1.75rem' }} // Matches leading-7
+                    style={{ lineHeight: '1.75rem' }}
                 />
             </div>
         </main>
