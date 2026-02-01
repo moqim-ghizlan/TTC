@@ -151,8 +151,10 @@ export default function EditorScreen({ route, navigation }: Props) {
           }}
           placeholder="// Start typing..."
           placeholderTextColor="#64748b"
-          multiline={true}
+          multiline
+          autoCorrect={false}
           autoCapitalize="none"
+          spellCheck={false}
         />
       </ScrollView>
 
