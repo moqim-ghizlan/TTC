@@ -13,6 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { MaterialIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { api } from '../services/api';
 
@@ -30,6 +31,7 @@ export default function EditorScreen({ route, navigation }: Props) {
   const [saving, setSaving] = useState(false);
   const [lastUpdate, setLastUpdate] = useState('Never');
   const [language, setLanguage] = useState('Plain Text');
+  const [copying, setCopying] = useState(false);
   const lastTypedAt = useRef<number>(0);
   const contentRef = useRef<string>('');
 
@@ -43,7 +45,7 @@ export default function EditorScreen({ route, navigation }: Props) {
     if (/\bpublic\s+(class|static|void)|System\.out\.println|private\s+\w+\s+\w+|extends\s+\w+|implements\s+\w+/.test(code)) return 'Java';
     if (/#include\s*<|std::|cout\s*<<|cin\s*>>|namespace\s+\w+|int\s+main\s*\(/.test(code)) return 'C++';
     if (/^package\s+\w+|func\s+\w+\s*\(|import\s+\(|fmt\.Print/.test(code)) return 'Go';
-    if (/\bfn\s+\w+|let\s+mut\s+|println!|impl\s+\w+|use\s+std::/.test(code)) return 'Rust';
+    if (/\bfn\s+\w+|let\s+mut\s+|println!|impl\s+\w+|use\s+\w+::/.test(code)) return 'Rust';
     if (/^<\?php|<\?=|\$\w+\s*=|function\s+\w+\s*\(.*\)\s*{|echo\s+/.test(code)) return 'PHP';
     if (/\bdef\s+\w+|puts\s+|require\s+['"]|end\b|attr_accessor/.test(code)) return 'Ruby';
     if (/<!DOCTYPE\s+html>|<html|<body|<div|<span|<h1/.test(code)) return 'HTML';
@@ -72,7 +74,8 @@ export default function EditorScreen({ route, navigation }: Props) {
           setLastUpdate(timeStr);
         }
       } catch (error) {
-        Alert.alert('Error', 'Failed to load code');
+        // Suppress 404 alert on initial load as it just means new file
+        // Alert.alert('Error', 'Failed to load code');
       } finally {
         setLoading(false);
       }
@@ -103,10 +106,14 @@ export default function EditorScreen({ route, navigation }: Props) {
   // Polling for updates
   useEffect(() => {
     const interval = setInterval(async () => {
-      const data = await api.getCode(key);
-      if (data && data.content !== contentRef.current) {
-        setContent(data.content || '');
-        setLanguage(detectLanguage(data.content || ''));
+      try {
+        const data = await api.getCode(key);
+        if (data && data.content !== contentRef.current) {
+          setContent(data.content || '');
+          setLanguage(detectLanguage(data.content || ''));
+        }
+      } catch (e) {
+        // Ignore polling errors
       }
     }, 5000); // Poll every 5 seconds
 
@@ -115,7 +122,8 @@ export default function EditorScreen({ route, navigation }: Props) {
 
   const handleCopyCode = async () => {
     await Clipboard.setStringAsync(content);
-    Alert.alert('Success', 'Code copied to clipboard');
+    setCopying(true);
+    setTimeout(() => setCopying(false), 2000);
   };
 
   const handleShare = async () => {
@@ -144,10 +152,10 @@ export default function EditorScreen({ route, navigation }: Props) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.iconButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>Back</Text>
+          <MaterialIcons name="arrow-back" size={24} color="#3b82f6" />
         </TouchableOpacity>
 
         <View style={styles.titleContainer}>
@@ -159,12 +167,24 @@ export default function EditorScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={handleShare}
-        >
-          <Text style={styles.shareButtonText}>Share</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleCopyCode}
+          >
+            <MaterialIcons
+              name={copying ? "check" : "content-copy"}
+              size={22}
+              color={copying ? "#22c55e" : "#3b82f6"}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleShare}
+          >
+            <MaterialIcons name="share" size={22} color="#3b82f6" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Editor */}
@@ -230,12 +250,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#283039',
   },
-  backButton: {
-    padding: 8,
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  backButtonText: {
-    color: '#3b82f6',
-    fontSize: 16,
+  iconButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   keyContainer: {
     backgroundColor: '#101922',
@@ -250,12 +272,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'monospace',
   },
-  shareButton: {
-    padding: 8,
+  titleContainer: {
+    alignItems: 'center',
   },
-  shareButtonText: {
-    color: '#3b82f6',
-    fontSize: 16,
+  languageBadge: {
+    marginTop: 4,
+    backgroundColor: '#334155',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  languageText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   editorContainer: {
     flex: 1,
@@ -300,20 +330,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
-  },
-  titleContainer: {
-    alignItems: 'center',
-  },
-  languageBadge: {
-    marginTop: 4,
-    backgroundColor: '#334155',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  languageText: {
-    color: '#94a3b8',
-    fontSize: 10,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
 });
